@@ -10,6 +10,7 @@ struct MazeDocument: Codable, Identifiable, Equatable {
 
     struct Settings: Codable, Equatable {
         static let stepsPerMoveRange = 1...12
+        static let wallThicknessRange = 1.0...8.0
 
         var wallThickness: Double = 2
         /// How many steps make one move in the game this maze is for.

@@ -17,6 +17,8 @@ struct EditorView: View {
 private struct EditorScreen: View {
     @State private var model: EditorModel
     @State private var isShowingRace = false
+    @State private var isShowingSettings = false
+    @State private var isPreviewing = false
 
     init(document: MazeDocument, store: DocumentStore) {
         _model = State(initialValue: EditorModel(document: document, store: store))
@@ -30,7 +32,8 @@ private struct EditorScreen: View {
             let geometry = GridGeometry(columns: model.maze.width, rows: model.maze.height, size: proxy.size)
             MazeCanvas(
                 maze: model.maze,
-                wallThickness: model.document.settings.wallThickness,
+                wallThickness: model.wallThickness,
+                isPreview: isPreviewing,
                 roomPreviews: model.roomPreviews,
                 canPlaceRoomPreview: model.canPlaceRoomPreview,
                 analysis: analysis,
@@ -38,6 +41,7 @@ private struct EditorScreen: View {
                 symmetry: model.symmetry
             )
             .contentShape(Rectangle())
+            .allowsHitTesting(!isPreviewing)
                 .gesture(
                     DragGesture(minimumDistance: 0)
                         .onChanged { value in
@@ -57,6 +61,13 @@ private struct EditorScreen: View {
                 HStack {
                     SymmetryChip(symmetry: $model.symmetry)
                     Spacer()
+                    Button("Settings", systemImage: "gearshape") { isShowingSettings = true }
+                        .labelStyle(.iconOnly)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                        .padding(8)
+                        .background(.thinMaterial, in: Circle())
+                    Spacer()
                     Button {
                         isShowingRace = true
                     } label: {
@@ -73,9 +84,15 @@ private struct EditorScreen: View {
             }
             .padding(.horizontal)
             .padding(.bottom, 8)
+            // Hidden rather than removed while previewing, so the maze doesn't shift.
+            .opacity(isPreviewing ? 0 : 1)
+            .disabled(isPreviewing)
         }
         .sheet(isPresented: $isShowingRace) {
             RaceSheet(model: model)
+        }
+        .sheet(isPresented: $isShowingSettings) {
+            SettingsSheet(model: model)
         }
         .navigationTitle(model.document.name)
         .navigationBarTitleDisplayMode(.inline)
@@ -85,6 +102,10 @@ private struct EditorScreen: View {
                     .disabled(!model.canUndo)
                 Button("Redo", systemImage: "arrow.uturn.forward") { model.redo() }
                     .disabled(!model.canRedo)
+            }
+            ToolbarSpacer(.fixed, placement: .primaryAction)
+            ToolbarItem(placement: .primaryAction) {
+                Toggle("Preview", systemImage: isPreviewing ? "eye.fill" : "eye", isOn: $isPreviewing)
             }
         }
         .alert("Couldn't save your maze", isPresented: isPresentingSaveError) {

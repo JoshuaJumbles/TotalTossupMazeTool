@@ -6,6 +6,9 @@ struct MazeCanvas: View {
     let maze: Maze
     var wallThickness: CGFloat = 2
     var showsGrid = true
+    /// Draws only the walls, in the foreground colour, with nothing behind them. Uncarved cells
+    /// are left as blank as open space. Hides all editor overlays.
+    var isPreview = false
     /// Rooms being dragged out, drawn as dashed outlines over the maze.
     var roomPreviews: [Room] = []
     var canPlaceRoomPreview = true
@@ -34,6 +37,13 @@ struct MazeCanvas: View {
                 }
             }
 
+            if isPreview {
+                context.stroke(
+                    walls, with: .color(.primary),
+                    style: StrokeStyle(lineWidth: wallThickness, lineCap: .square)
+                )
+                return
+            }
             context.fill(Path(geometry.frame), with: .color(Color(.systemGray5)))
             context.fill(floor, with: .color(Color(.systemBackground)))
             for room in maze.rooms {

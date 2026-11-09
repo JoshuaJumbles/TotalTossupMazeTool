@@ -66,6 +66,18 @@ struct EditorModelTests {
         #expect(!model.canRedo)
     }
 
+    @Test func settingsSaveStraightAwayWithoutAnUndoStep() throws {
+        let (model, _) = try makeModel()
+
+        model.wallThickness = 5
+        model.stepsPerMove = 3
+
+        let saved = DocumentStore(directory: directory).document(id: model.document.id)
+        #expect(saved?.settings.wallThickness == 5)
+        #expect(saved?.settings.stepsPerMove == 3)
+        #expect(!model.canUndo)
+    }
+
     @Test func strokeThatChangesNothingAddsNoUndoStep() throws {
         let (model, _) = try makeModel()
         model.tool = .erase

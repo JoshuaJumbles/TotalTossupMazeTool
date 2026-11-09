@@ -18,9 +18,11 @@ Early development. Working today:
 - Race overlay: team colour along each path, a step number at every stop, and a badge where each move ends
 - Race chip and sheet: moves per team, steps per move, and a list of issues
 - Symmetry: mirror left and right, mirror top and bottom, or rotate 180°, applied to every stroke while it is on
+- Preview: a two-tone view of the bare maze with every editor overlay hidden
+- Settings: wall thickness per maze, and a light, dark or system appearance for the app
 - Mazes save after every stroke
 
-Planned: a two-tone preview; wall thickness and light/dark settings.
+Possible later: image export, zoom for larger grids, an iPad layout.
 
 ## Building
 
