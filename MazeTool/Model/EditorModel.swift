@@ -67,6 +67,15 @@ final class EditorModel {
     }
     var analysis: MazeAnalysis { MazeAnalysis(maze: maze, stepsPerMove: stepsPerMove) }
 
+    /// A display setting kept with the maze; like `stepsPerMove`, it saves straight away and isn't undoable.
+    var wallThickness: Double {
+        get { document.settings.wallThickness }
+        set {
+            document.settings.wallThickness = newValue
+            save()
+        }
+    }
+
     /// A game rule rather than a drawing edit, so it saves straight away and isn't undoable.
     var stepsPerMove: Int {
         get { document.settings.stepsPerMove }
