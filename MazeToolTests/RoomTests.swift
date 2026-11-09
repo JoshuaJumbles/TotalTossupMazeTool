@@ -128,7 +128,7 @@ struct RoomEditingTests {
 
     private func stroke(_ model: EditorModel, _ tool: EditorModel.Tool, _ cells: Cell...) {
         model.tool = tool
-        cells.forEach(model.drag(to:))
+        cells.forEach { model.drag(to: $0) }
         model.endStroke()
     }
 

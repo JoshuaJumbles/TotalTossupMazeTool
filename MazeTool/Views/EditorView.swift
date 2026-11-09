@@ -42,7 +42,10 @@ private struct EditorScreen: View {
                         .onChanged { value in
                             // Strokes must start on the grid, but may run past its edge.
                             guard geometry.frame.contains(value.startLocation) else { return }
-                            model.drag(to: geometry.nearestCell(to: value.location))
+                            model.drag(
+                                to: geometry.nearestCell(to: value.location),
+                                vertex: geometry.nearestVertex(to: value.location)
+                            )
                         }
                         .onEnded { _ in model.endStroke() }
                 )

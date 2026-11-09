@@ -11,6 +11,7 @@ Early development. Working today:
 - Document list with create, duplicate, rename and delete
 - New-maze sheet with name, width, height and a live grid preview
 - Path tool: drag to carve a connected corridor
+- Double tool: drag along a grid line to carve two parallel corridors, one on each side
 - Room tool: drag a diagonal to place a rectangular room
 - Mark tool: tap a room to cycle blue Start, red Start, End
 - Erase tool, with undo and redo per stroke
@@ -18,7 +19,7 @@ Early development. Working today:
 - Race chip and sheet: moves per team, steps per move, and a list of issues
 - Mazes save after every stroke
 
-Planned: double-path tool; symmetry assistance; a two-tone preview.
+Planned: symmetry assistance; a two-tone preview; wall thickness and light/dark settings.
 
 ## Building
 

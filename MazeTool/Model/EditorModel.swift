@@ -7,6 +7,7 @@ import Observation
 final class EditorModel {
     enum Tool: String, CaseIterable, Identifiable {
         case path = "Path"
+        case double = "Double"
         case room = "Room"
         case mark = "Mark"
         case erase = "Erase"
@@ -31,6 +32,10 @@ final class EditorModel {
     private var mazeBeforeStroke: Maze?
     private var firstCell: Cell?
     private var lastCell: Cell?
+    /// Grid vertices the double-path stroke has traced so far, along the wall between its two corridors.
+    private var doubleVertices: [Cell] = []
+    /// The maze before each double-path step was carved, so dragging back can rewind it.
+    private var doubleSnapshots: [Maze] = []
 
     init(document: MazeDocument, store: DocumentStore) {
         self.document = document
@@ -53,19 +58,27 @@ final class EditorModel {
     }
 
     /// Extends the current stroke to `cell`, starting a new stroke if none is in progress.
-    func drag(to cell: Cell) {
+    /// `vertex` is the grid vertex nearest the touch, which the double-path tool follows instead.
+    func drag(to cell: Cell, vertex: Cell? = nil) {
         guard let firstCell, let lastCell else {
             mazeBeforeStroke = maze
             highlightedIssue = nil
             firstCell = cell
             lastCell = cell
+            doubleVertices = vertex.map { [$0] } ?? []
             beginStroke(at: cell)
+            return
+        }
+        if tool == .double {
+            vertex.map(extendDoublePath)
             return
         }
         guard cell != lastCell else { return }
         switch tool {
         case .path:
             document.maze.carvePath(from: lastCell, to: cell)
+        case .double:
+            break
         case .room:
             roomPreview = Room(from: firstCell, to: cell)
         case .mark:
@@ -87,6 +100,8 @@ final class EditorModel {
             mazeBeforeStroke = nil
             firstCell = nil
             lastCell = nil
+            doubleVertices = []
+            doubleSnapshots = []
         }
         guard let mazeBeforeStroke, mazeBeforeStroke != maze else { return }
         undoStack.append(mazeBeforeStroke)
@@ -111,10 +126,33 @@ final class EditorModel {
         save()
     }
 
+    private func extendDoublePath(to vertex: Cell) {
+        guard let last = doubleVertices.last else {
+            doubleVertices = [vertex]
+            return
+        }
+        for step in Maze.steps(from: last, to: vertex) {
+            let before = doubleVertices.dropLast().last
+            // Dragging back over the line just drawn rewinds that step. Carving there instead
+            // would swap the corridors' sides and join them.
+            if step == before {
+                doubleVertices.removeLast()
+                document.maze = doubleSnapshots.removeLast()
+                continue
+            }
+            doubleSnapshots.append(maze)
+            document.maze.carveDoublePath(from: doubleVertices[doubleVertices.count - 1], to: step, after: before)
+            doubleVertices.append(step)
+        }
+    }
+
     private func beginStroke(at cell: Cell) {
         switch tool {
         case .path:
             document.maze.carve(cell)
+        case .double:
+            // Needs a second vertex before there is a line to carve along.
+            break
         case .room:
             roomPreview = Room(from: cell, to: cell)
         case .mark:
