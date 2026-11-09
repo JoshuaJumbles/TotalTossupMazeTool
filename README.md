@@ -10,8 +10,11 @@ Early development. Working today:
 
 - Document list with create, duplicate, rename and delete
 - New-maze sheet with name, width, height and a live grid preview
+- Path tool: drag to carve a connected corridor
+- Erase tool, with undo and redo per stroke
+- Mazes save after every stroke
 
-Planned: path, double-path, room, marker and erase tools; validity checks; symmetry assistance; a two-tone preview.
+Planned: double-path, room and marker tools; validity checks; symmetry assistance; a two-tone preview.
 
 ## Building
 
