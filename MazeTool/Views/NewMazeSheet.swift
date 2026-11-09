@@ -20,7 +20,7 @@ struct NewMazeSheet: View {
                     Stepper("Height: \(height)", value: $height, in: MazeDocument.sizeRange)
                 }
                 Section("Preview") {
-                    MazeCanvas(maze: Maze(width: width, height: height), wallThickness: 1)
+                    MazeCanvas(maze: Maze(width: width, height: height))
                         .frame(maxWidth: .infinity)
                         .frame(height: 300)
                         .padding(.vertical, 8)

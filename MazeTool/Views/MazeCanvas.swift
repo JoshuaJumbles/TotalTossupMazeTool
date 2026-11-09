@@ -33,9 +33,9 @@ struct MazeCanvas: View {
             context.translateBy(x: inset, y: inset)
             context.translateBy(x: viewport.offset.x, y: viewport.offset.y)
             let size = viewport.contentSize(in: CGSize(width: size.width - inset * 2, height: size.height - inset * 2))
-            // Walls keep their proportion to the cells as the maze is zoomed.
-            let wallThickness = wallThickness * viewport.zoom
             let geometry = GridGeometry(columns: maze.width, rows: maze.height, size: size)
+            // Walls keep their proportion to the cells on any screen, at any zoom, down to a hairline.
+            let wallThickness = max(wallThickness * geometry.cellSize / GridGeometry.referenceCellSize, 0.5)
             var floor = Path()
             var walls = Path()
             for y in 0..<maze.height {

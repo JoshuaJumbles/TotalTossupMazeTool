@@ -28,7 +28,7 @@ enum MazeExport {
     }
 
     /// A cell's side in points, close to its size on screen so wall thickness keeps its proportion.
-    static let cellPoints: CGFloat = 24
+    static let cellPoints = GridGeometry.referenceCellSize
     /// Pixels per point: 96 pixels per cell, so a 16 × 24 maze is about 1540 × 2310.
     static let scale: CGFloat = 4
 
