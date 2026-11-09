@@ -6,12 +6,14 @@ struct MazeCanvas: View {
     let maze: Maze
     var wallThickness: CGFloat = 2
     var showsGrid = true
-    /// A room being dragged out, drawn as a dashed outline over the maze.
-    var roomPreview: Room?
+    /// Rooms being dragged out, drawn as dashed outlines over the maze.
+    var roomPreviews: [Room] = []
     var canPlaceRoomPreview = true
     /// Editor overlays: team colour along each route, stop labels and issue rings. Nil draws the bare maze.
     var analysis: MazeAnalysis?
     var highlightedIssue: MazeIssue?
+    /// Draws the mirror axis, or the pivot for a rotation, while symmetry is on.
+    var symmetry = Symmetry.off
 
     var body: some View {
         Canvas { context, size in
@@ -66,13 +68,34 @@ struct MazeCanvas: View {
                 context.stroke(rings, with: .color(.orange), lineWidth: 2.5)
             }
 
-            if let roomPreview {
+            Self.drawGuide(for: symmetry, in: geometry.frame, context: context)
+
+            for roomPreview in roomPreviews {
                 let outline = Path(geometry.rect(for: roomPreview))
                 let color: Color = canPlaceRoomPreview ? .accentColor : .red
                 context.fill(outline, with: .color(color.opacity(0.2)))
                 context.stroke(outline, with: .color(color), style: StrokeStyle(lineWidth: 2, dash: [6, 4]))
             }
         }
+    }
+
+    private static func drawGuide(for symmetry: Symmetry, in frame: CGRect, context: GraphicsContext) {
+        var axis = Path()
+        switch symmetry {
+        case .off:
+            return
+        case .leftRight:
+            axis.move(to: CGPoint(x: frame.midX, y: frame.minY))
+            axis.addLine(to: CGPoint(x: frame.midX, y: frame.maxY))
+        case .topBottom:
+            axis.move(to: CGPoint(x: frame.minX, y: frame.midY))
+            axis.addLine(to: CGPoint(x: frame.maxX, y: frame.midY))
+        case .rotate:
+            // A hollow ring, so a marker label in a room at the centre stays readable.
+            let pivot = CGRect(x: frame.midX - 10, y: frame.midY - 10, width: 20, height: 20)
+            context.stroke(Path(ellipseIn: pivot), with: .color(.purple), style: StrokeStyle(lineWidth: 1.5, dash: [4, 3]))
+        }
+        context.stroke(axis, with: .color(.purple), style: StrokeStyle(lineWidth: 1.5, dash: [6, 4]))
     }
 
     /// Tints the room and, for a marked room, labels it S or E.

@@ -21,6 +21,8 @@ final class EditorModel {
     var saveError: String?
     /// The issue picked from the race sheet; its cells stay ringed until the next stroke.
     var highlightedIssue: MazeIssue?
+    /// Repeats every stroke as its mirror image. Marking is never mirrored.
+    var symmetry = Symmetry.off
     private(set) var document: MazeDocument
     private(set) var undoStack: [Maze] = []
     private(set) var redoStack: [Maze] = []
@@ -45,7 +47,24 @@ final class EditorModel {
     var maze: Maze { document.maze }
     var canUndo: Bool { !undoStack.isEmpty }
     var canRedo: Bool { !redoStack.isEmpty }
-    var canPlaceRoomPreview: Bool { roomPreview.map(maze.canAddRoom) ?? false }
+
+    /// The room being dragged out and, with symmetry on, its mirror image. A room that
+    /// straddles the axis and is its own mirror image appears once.
+    var roomPreviews: [Room] {
+        guard let roomPreview else { return [] }
+        let far = Cell(x: roomPreview.x + roomPreview.width - 1, y: roomPreview.y + roomPreview.height - 1)
+        guard let mirroredNear = mirrored(cell: Cell(x: roomPreview.x, y: roomPreview.y)),
+              let mirroredFar = mirrored(cell: far) else { return [roomPreview] }
+        let mirror = Room(from: mirroredNear, to: mirroredFar)
+        return mirror == roomPreview ? [roomPreview] : [roomPreview, mirror]
+    }
+
+    /// Whether the previewed rooms fit: each clear of existing rooms, and not overlapping each other.
+    var canPlaceRoomPreview: Bool {
+        let previews = roomPreviews
+        guard !previews.isEmpty, previews.allSatisfy(maze.canAddRoom) else { return false }
+        return previews.count < 2 || !previews[0].overlaps(previews[1])
+    }
     var analysis: MazeAnalysis { MazeAnalysis(maze: maze, stepsPerMove: stepsPerMove) }
 
     /// A game rule rather than a drawing edit, so it saves straight away and isn't undoable.
@@ -76,7 +95,9 @@ final class EditorModel {
         guard cell != lastCell else { return }
         switch tool {
         case .path:
-            document.maze.carvePath(from: lastCell, to: cell)
+            for (start, end) in zip(images(ofCell: lastCell), images(ofCell: cell)) {
+                document.maze.carvePath(from: start, to: end)
+            }
         case .double:
             break
         case .room:
@@ -85,15 +106,17 @@ final class EditorModel {
             break
         case .erase:
             // Dragging over a room leaves it alone; only a stroke that starts on a room removes it.
-            Maze.steps(from: lastCell, to: cell).forEach { document.maze.erase($0) }
+            for (start, end) in zip(images(ofCell: lastCell), images(ofCell: cell)) {
+                Maze.steps(from: start, to: end).forEach { document.maze.erase($0) }
+            }
         }
         self.lastCell = cell
     }
 
     /// Finishes the stroke: one undo step and one save, however many cells it touched.
     func endStroke() {
-        if let roomPreview {
-            document.maze.addRoom(roomPreview)
+        if canPlaceRoomPreview {
+            roomPreviews.forEach { document.maze.addRoom($0) }
         }
         defer {
             roomPreview = nil
@@ -141,7 +164,12 @@ final class EditorModel {
                 continue
             }
             doubleSnapshots.append(maze)
-            document.maze.carveDoublePath(from: doubleVertices[doubleVertices.count - 1], to: step, after: before)
+            let starts = images(ofVertex: doubleVertices[doubleVertices.count - 1])
+            let ends = images(ofVertex: step)
+            let befores = before.map(images(ofVertex:))
+            for index in starts.indices {
+                document.maze.carveDoublePath(from: starts[index], to: ends[index], after: befores?[index])
+            }
             doubleVertices.append(step)
         }
     }
@@ -149,7 +177,7 @@ final class EditorModel {
     private func beginStroke(at cell: Cell) {
         switch tool {
         case .path:
-            document.maze.carve(cell)
+            images(ofCell: cell).forEach { document.maze.carve($0) }
         case .double:
             // Needs a second vertex before there is a line to carve along.
             break
@@ -158,10 +186,24 @@ final class EditorModel {
         case .mark:
             document.maze.cycleMarker(at: cell)
         case .erase:
-            if !document.maze.removeRoom(at: cell) {
-                document.maze.erase(cell)
+            for image in images(ofCell: cell) where !document.maze.removeRoom(at: image) {
+                document.maze.erase(image)
             }
         }
+    }
+
+    private func mirrored(cell: Cell) -> Cell? {
+        symmetry.reflect(cell, maxX: maze.width - 1, maxY: maze.height - 1)
+    }
+
+    /// The cell and, with symmetry on, its mirror image. The pair is kept even when both are
+    /// the same cell, so the images of two cells always line up index for index.
+    private func images(ofCell cell: Cell) -> [Cell] {
+        [cell] + [mirrored(cell: cell)].compactMap { $0 }
+    }
+
+    private func images(ofVertex vertex: Cell) -> [Cell] {
+        [vertex] + [symmetry.reflect(vertex, maxX: maze.width, maxY: maze.height)].compactMap { $0 }
     }
 
     private func save() {
