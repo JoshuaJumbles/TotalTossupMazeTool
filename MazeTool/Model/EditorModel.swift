@@ -122,6 +122,15 @@ final class EditorModel {
         self.lastCell = cell
     }
 
+    /// Abandons the stroke in progress and puts the maze back as it was when the stroke began.
+    func cancelStroke() {
+        if let mazeBeforeStroke {
+            document.maze = mazeBeforeStroke
+        }
+        roomPreview = nil
+        endStroke()
+    }
+
     /// Finishes the stroke: one undo step and one save, however many cells it touched.
     func endStroke() {
         if canPlaceRoomPreview {

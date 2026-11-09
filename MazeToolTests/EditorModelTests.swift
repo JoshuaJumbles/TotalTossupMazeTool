@@ -66,6 +66,28 @@ struct EditorModelTests {
         #expect(!model.canRedo)
     }
 
+    @Test func cancelledStrokeLeavesNoTraceAndNoUndoStep() throws {
+        let (model, _) = try makeModel()
+        model.drag(to: Cell(x: 0, y: 0))
+        model.endStroke()
+        let before = model.maze
+
+        model.drag(to: Cell(x: 3, y: 3))
+        model.drag(to: Cell(x: 5, y: 3))
+        model.cancelStroke()
+
+        #expect(model.maze == before)
+        #expect(model.undoStack.count == 1)
+
+        model.tool = .room
+        model.drag(to: Cell(x: 2, y: 2))
+        model.drag(to: Cell(x: 4, y: 4))
+        model.cancelStroke()
+
+        #expect(model.maze == before)
+        #expect(model.roomPreviews.isEmpty)
+    }
+
     @Test func settingsSaveStraightAwayWithoutAnUndoStep() throws {
         let (model, _) = try makeModel()
 
