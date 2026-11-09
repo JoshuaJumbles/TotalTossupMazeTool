@@ -106,7 +106,7 @@ private struct DocumentRow: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            GridPreview(width: document.width, height: document.height)
+            MazeCanvas(maze: document.maze, wallThickness: 0.5, showsGrid: false)
                 .frame(width: 40, height: 52)
             VStack(alignment: .leading, spacing: 2) {
                 Text(document.name)
