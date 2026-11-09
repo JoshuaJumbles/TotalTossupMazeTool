@@ -7,7 +7,7 @@ enum MazeExport {
     enum Style: String, CaseIterable, Identifiable {
         /// Walls only, as in the editor's preview.
         case maze
-        /// Walls plus team colour, step labels, move badges and room markers.
+        /// Walls plus the grid, team colour, step labels, move badges and room markers.
         case overlay
 
         var id: Self { self }
@@ -46,7 +46,7 @@ enum MazeExport {
         let canvas = MazeCanvas(
             maze: document.maze,
             wallThickness: document.settings.wallThickness,
-            showsGrid: false,
+            showsGrid: style == .overlay,
             isPreview: style == .maze,
             showsBackdrop: false,
             ink: .black,

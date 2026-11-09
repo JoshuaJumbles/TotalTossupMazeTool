@@ -65,6 +65,18 @@ struct MazeExportTests {
         #expect(try pixel(of: image, atCellX: 1.5, y: 1.0, in: document) == [0, 0, 0, 255])
     }
 
+    @Test func onlyTheOverlayStyleDrawsTheGridIncludingItsOuterEdge() throws {
+        let document = makeDocument()
+        let maze = try #require(MazeExport.image(of: document, style: .maze))
+        let overlay = try #require(MazeExport.image(of: document, style: .overlay))
+
+        // A grid line between two dead-space cells, and the grid's left edge beside dead space.
+        #expect(try pixel(of: maze, atCellX: 1.0, y: 2.5, in: document)[3] == 0)
+        #expect(try pixel(of: overlay, atCellX: 1.0, y: 2.5, in: document)[3] > 0)
+        #expect(try pixel(of: maze, atCellX: 0.0, y: 2.5, in: document)[3] == 0)
+        #expect(try pixel(of: overlay, atCellX: 0.0, y: 2.5, in: document)[3] > 0)
+    }
+
     @Test func pngFilesAreNamedAfterTheMazeAndStyle() throws {
         let url = try MazeExport.writePNG(of: makeDocument(), style: .overlay)
 

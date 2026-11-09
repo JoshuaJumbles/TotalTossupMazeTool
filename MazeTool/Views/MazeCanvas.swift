@@ -68,7 +68,12 @@ struct MazeCanvas: View {
                 context.fill(tinted, with: .color(route.team.color.opacity(0.2)))
             }
             if showsGrid {
-                context.stroke(Self.gridLines(geometry), with: .color(.secondary.opacity(0.35)), lineWidth: 0.5)
+                var lines = Self.gridLines(geometry)
+                // With no backdrop there is no border, so the grid closes its own outer edge.
+                if !showsBackdrop {
+                    lines.addRect(geometry.frame)
+                }
+                context.stroke(lines, with: .color(.secondary.opacity(0.35)), lineWidth: 0.5)
             }
             context.stroke(
                 walls, with: .color(ink),
