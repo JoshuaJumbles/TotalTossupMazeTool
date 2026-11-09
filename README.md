@@ -20,10 +20,11 @@ Early development. Working today:
 - Symmetry: mirror left and right, mirror top and bottom, or rotate 180°, applied to every stroke while it is on
 - Preview: a two-tone view of the bare maze with every editor overlay hidden
 - Settings: wall thickness per maze, and a light, dark or system appearance for the app
+- Zoom: pinch to zoom up to 5×, drag with two fingers to pan, one finger still draws
 - Export: transparent PNGs of the bare walls, the walls with editor overlays, or both, through the share sheet
 - Mazes save after every stroke
 
-Possible later: zoom for larger grids, an iPad layout.
+Possible later: an iPad layout.
 
 ## Building
 

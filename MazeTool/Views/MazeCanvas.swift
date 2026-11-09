@@ -16,6 +16,8 @@ struct MazeCanvas: View {
     var ink = Color.primary
     /// Space kept clear around the grid, so walls on its edge aren't cut in half.
     var inset: CGFloat = 0
+    /// Zoom and pan. The maze is redrawn at the zoomed size, so it stays sharp.
+    var viewport = Viewport()
     /// Rooms being dragged out, drawn as dashed outlines over the maze.
     var roomPreviews: [Room] = []
     var canPlaceRoomPreview = true
@@ -29,7 +31,10 @@ struct MazeCanvas: View {
         Canvas { context, size in
             var context = context
             context.translateBy(x: inset, y: inset)
-            let size = CGSize(width: size.width - inset * 2, height: size.height - inset * 2)
+            context.translateBy(x: viewport.offset.x, y: viewport.offset.y)
+            let size = viewport.contentSize(in: CGSize(width: size.width - inset * 2, height: size.height - inset * 2))
+            // Walls keep their proportion to the cells as the maze is zoomed.
+            let wallThickness = wallThickness * viewport.zoom
             let geometry = GridGeometry(columns: maze.width, rows: maze.height, size: size)
             var floor = Path()
             var walls = Path()
