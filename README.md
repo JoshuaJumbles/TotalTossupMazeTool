@@ -14,9 +14,11 @@ Early development. Working today:
 - Room tool: drag a diagonal to place a rectangular room
 - Mark tool: tap a room to cycle blue Start, red Start, End
 - Erase tool, with undo and redo per stroke
+- Race overlay: team colour along each path, a step number at every stop, and a badge where each move ends
+- Race chip and sheet: moves per team, steps per move, and a list of issues
 - Mazes save after every stroke
 
-Planned: double-path tool; validity checks; symmetry assistance; a two-tone preview.
+Planned: double-path tool; symmetry assistance; a two-tone preview.
 
 ## Building
 

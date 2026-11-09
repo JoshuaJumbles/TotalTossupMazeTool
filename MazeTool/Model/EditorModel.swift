@@ -18,6 +18,8 @@ final class EditorModel {
 
     var tool = Tool.path
     var saveError: String?
+    /// The issue picked from the race sheet; its cells stay ringed until the next stroke.
+    var highlightedIssue: MazeIssue?
     private(set) var document: MazeDocument
     private(set) var undoStack: [Maze] = []
     private(set) var redoStack: [Maze] = []
@@ -39,11 +41,22 @@ final class EditorModel {
     var canUndo: Bool { !undoStack.isEmpty }
     var canRedo: Bool { !redoStack.isEmpty }
     var canPlaceRoomPreview: Bool { roomPreview.map(maze.canAddRoom) ?? false }
+    var analysis: MazeAnalysis { MazeAnalysis(maze: maze, stepsPerMove: stepsPerMove) }
+
+    /// A game rule rather than a drawing edit, so it saves straight away and isn't undoable.
+    var stepsPerMove: Int {
+        get { document.settings.stepsPerMove }
+        set {
+            document.settings.stepsPerMove = newValue
+            save()
+        }
+    }
 
     /// Extends the current stroke to `cell`, starting a new stroke if none is in progress.
     func drag(to cell: Cell) {
         guard let firstCell, let lastCell else {
             mazeBeforeStroke = maze
+            highlightedIssue = nil
             firstCell = cell
             lastCell = cell
             beginStroke(at: cell)
