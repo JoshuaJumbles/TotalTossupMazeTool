@@ -2,6 +2,10 @@ import CoreGraphics
 
 /// Maps between grid cells and points for a grid centred in, and scaled to fit, a given size.
 struct GridGeometry {
+    /// The cell size that wall thickness is measured against: a 16 × 24 maze on an iPhone.
+    /// Walls are drawn in proportion, so a maze looks the same at any size.
+    static let referenceCellSize: CGFloat = 24
+
     let columns: Int
     let rows: Int
     let cellSize: CGFloat
