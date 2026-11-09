@@ -31,10 +31,11 @@ private struct EditorScreen: View {
             MazeCanvas(
                 maze: model.maze,
                 wallThickness: model.document.settings.wallThickness,
-                roomPreview: model.roomPreview,
+                roomPreviews: model.roomPreviews,
                 canPlaceRoomPreview: model.canPlaceRoomPreview,
                 analysis: analysis,
-                highlightedIssue: model.highlightedIssue
+                highlightedIssue: model.highlightedIssue,
+                symmetry: model.symmetry
             )
             .contentShape(Rectangle())
                 .gesture(
@@ -54,6 +55,7 @@ private struct EditorScreen: View {
         .safeAreaInset(edge: .bottom) {
             VStack(spacing: 10) {
                 HStack {
+                    SymmetryChip(symmetry: $model.symmetry)
                     Spacer()
                     Button {
                         isShowingRace = true
