@@ -16,6 +16,7 @@ struct EditorView: View {
 
 private struct EditorScreen: View {
     @State private var model: EditorModel
+    @State private var isShowingRace = false
 
     init(document: MazeDocument, store: DocumentStore) {
         _model = State(initialValue: EditorModel(document: document, store: store))
@@ -23,6 +24,7 @@ private struct EditorScreen: View {
 
     var body: some View {
         @Bindable var model = model
+        let analysis = model.analysis
 
         GeometryReader { proxy in
             let geometry = GridGeometry(columns: model.maze.width, rows: model.maze.height, size: proxy.size)
@@ -30,7 +32,9 @@ private struct EditorScreen: View {
                 maze: model.maze,
                 wallThickness: model.document.settings.wallThickness,
                 roomPreview: model.roomPreview,
-                canPlaceRoomPreview: model.canPlaceRoomPreview
+                canPlaceRoomPreview: model.canPlaceRoomPreview,
+                analysis: analysis,
+                highlightedIssue: model.highlightedIssue
             )
             .contentShape(Rectangle())
                 .gesture(
@@ -45,14 +49,28 @@ private struct EditorScreen: View {
         }
         .padding(8)
         .safeAreaInset(edge: .bottom) {
-            Picker("Tool", selection: $model.tool) {
-                ForEach(EditorModel.Tool.allCases) { tool in
-                    Text(tool.rawValue).tag(tool)
+            VStack(spacing: 10) {
+                HStack {
+                    Spacer()
+                    Button {
+                        isShowingRace = true
+                    } label: {
+                        RaceChip(analysis: analysis)
+                    }
+                    .buttonStyle(.plain)
                 }
+                Picker("Tool", selection: $model.tool) {
+                    ForEach(EditorModel.Tool.allCases) { tool in
+                        Text(tool.rawValue).tag(tool)
+                    }
+                }
+                .pickerStyle(.segmented)
             }
-            .pickerStyle(.segmented)
             .padding(.horizontal)
             .padding(.bottom, 8)
+        }
+        .sheet(isPresented: $isShowingRace) {
+            RaceSheet(model: model)
         }
         .navigationTitle(model.document.name)
         .navigationBarTitleDisplayMode(.inline)

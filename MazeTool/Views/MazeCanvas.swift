@@ -9,6 +9,9 @@ struct MazeCanvas: View {
     /// A room being dragged out, drawn as a dashed outline over the maze.
     var roomPreview: Room?
     var canPlaceRoomPreview = true
+    /// Editor overlays: team colour along each route, stop labels and issue rings. Nil draws the bare maze.
+    var analysis: MazeAnalysis?
+    var highlightedIssue: MazeIssue?
 
     var body: some View {
         Canvas { context, size in
@@ -34,6 +37,12 @@ struct MazeCanvas: View {
             for room in maze.rooms {
                 Self.draw(room, in: geometry.rect(for: room), cellSize: geometry.cellSize, context: context)
             }
+            for route in analysis?.routes.values.map({ $0 }) ?? [] {
+                var tinted = Path()
+                route.cells.forEach { tinted.addRect(geometry.rect(for: $0)) }
+                route.rooms.forEach { tinted.addRect(geometry.rect(for: $0)) }
+                context.fill(tinted, with: .color(route.team.color.opacity(0.2)))
+            }
             if showsGrid {
                 context.stroke(Self.gridLines(geometry), with: .color(.secondary.opacity(0.35)), lineWidth: 0.5)
             }
@@ -42,6 +51,20 @@ struct MazeCanvas: View {
                 style: StrokeStyle(lineWidth: wallThickness, lineCap: .square)
             )
             context.stroke(Path(geometry.frame), with: .color(.primary), lineWidth: 1)
+
+            if let analysis {
+                for route in analysis.routes.values {
+                    for stop in route.stops {
+                        Self.draw(stop, of: route.team, completing: analysis.moveCompleted(at: stop), geometry: geometry, context: context)
+                    }
+                }
+                let ringed = analysis.issues.filter(\.marksCanvas).flatMap(\.cells) + (highlightedIssue?.cells ?? [])
+                var rings = Path()
+                for cell in ringed {
+                    rings.addRoundedRect(in: geometry.rect(for: cell).insetBy(dx: 2, dy: 2), cornerSize: CGSize(width: 4, height: 4))
+                }
+                context.stroke(rings, with: .color(.orange), lineWidth: 2.5)
+            }
 
             if let roomPreview {
                 let outline = Path(geometry.rect(for: roomPreview))
@@ -67,6 +90,34 @@ struct MazeCanvas: View {
             Text(label).font(.system(size: fontSize, weight: .bold)).foregroundStyle(.primary),
             at: CGPoint(x: rect.midX, y: rect.midY)
         )
+    }
+
+    /// Labels a stop with its step number in the team colour. A stop that completes a move
+    /// gets a filled badge holding the move number instead.
+    private static func draw(
+        _ stop: Route.Stop, of team: Team, completing move: Int?,
+        geometry: GridGeometry, context: GraphicsContext
+    ) {
+        let rect = switch stop.anchor {
+        case .cell(let cell): geometry.rect(for: cell)
+        case .room(let room): geometry.rect(for: room)
+        }
+        let center = CGPoint(x: rect.midX, y: rect.midY)
+        let fontSize = geometry.cellSize * 0.55
+        if let move {
+            let radius = geometry.cellSize * 0.42
+            let badge = CGRect(x: center.x - radius, y: center.y - radius, width: radius * 2, height: radius * 2)
+            context.fill(Path(ellipseIn: badge), with: .color(team.color))
+            context.draw(
+                Text("\(move)").font(.system(size: fontSize, weight: .bold)).foregroundStyle(.white),
+                at: center
+            )
+        } else {
+            context.draw(
+                Text("\(stop.step)").font(.system(size: fontSize, weight: .semibold)).foregroundStyle(team.color),
+                at: center
+            )
+        }
     }
 
     private static func side(_ direction: Direction, of rect: CGRect) -> (CGPoint, CGPoint) {

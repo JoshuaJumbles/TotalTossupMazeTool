@@ -9,7 +9,20 @@ struct MazeDocument: Codable, Identifiable, Equatable {
     static let untitledName = "Untitled maze"
 
     struct Settings: Codable, Equatable {
+        static let stepsPerMoveRange = 1...12
+
         var wallThickness: Double = 2
+        /// How many steps make one move in the game this maze is for.
+        var stepsPerMove = 4
+
+        init() {}
+
+        // Settings added after a file was saved fall back to their defaults.
+        init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            wallThickness = try container.decodeIfPresent(Double.self, forKey: .wallThickness) ?? wallThickness
+            stepsPerMove = try container.decodeIfPresent(Int.self, forKey: .stepsPerMove) ?? stepsPerMove
+        }
     }
 
     var version = MazeDocument.currentVersion
