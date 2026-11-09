@@ -144,6 +144,44 @@ struct Maze: Equatable {
         }
     }
 
+    /// Carves two parallel corridors, one on each side of the grid line running from vertex
+    /// `start` to the adjacent vertex `end`. Vertex (x, y) is the top-left corner of cell (x, y).
+    ///
+    /// Passing the vertex the line came from as `previous` joins each corridor to its earlier
+    /// stretch. On a turn the inside corridor pivots on one cell and the outside one takes the
+    /// corner cell, so the two stay side by side and never connect to each other.
+    mutating func carveDoublePath(from start: Cell, to end: Cell, after previous: Cell? = nil) {
+        guard let lanes = Maze.lanes(from: start, to: end), contains(lanes.left), contains(lanes.right) else { return }
+        carve(lanes.left)
+        carve(lanes.right)
+        guard let previous, previous != end, let earlier = Maze.lanes(from: previous, to: start) else { return }
+        join(earlier.left, lanes.left, around: lanes.right)
+        join(earlier.right, lanes.right, around: lanes.left)
+    }
+
+    /// Connects two cells of one corridor across a turn. Diagonal cells are joined through
+    /// the corner cell that isn't `pivot`, the other corridor's cell on the inside of the turn.
+    private mutating func join(_ a: Cell, _ b: Cell, around pivot: Cell) {
+        guard a.x != b.x, a.y != b.y else {
+            connect(a, b)
+            return
+        }
+        let corner = Cell(x: a.x, y: b.y) == pivot ? Cell(x: b.x, y: a.y) : Cell(x: a.x, y: b.y)
+        connect(a, corner)
+        connect(corner, b)
+    }
+
+    /// The cells to the left and right of the grid line from one vertex to the next, facing along it.
+    private static func lanes(from start: Cell, to end: Cell) -> (left: Cell, right: Cell)? {
+        switch (end.x - start.x, end.y - start.y) {
+        case (1, 0): (Cell(x: start.x, y: start.y - 1), Cell(x: start.x, y: start.y))
+        case (-1, 0): (Cell(x: start.x - 1, y: start.y), Cell(x: start.x - 1, y: start.y - 1))
+        case (0, 1): (Cell(x: start.x, y: start.y), Cell(x: start.x - 1, y: start.y))
+        case (0, -1): (Cell(x: start.x - 1, y: start.y - 1), Cell(x: start.x, y: start.y - 1))
+        default: nil
+        }
+    }
+
     /// The cells visited walking from `start` to `end` in cardinal steps, excluding `start`.
     /// A diagonal becomes a staircase that follows the straight line between the two cells.
     static func steps(from start: Cell, to end: Cell) -> [Cell] {

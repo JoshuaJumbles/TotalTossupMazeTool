@@ -38,6 +38,15 @@ struct GridGeometry {
         )
     }
 
+    /// The interior grid vertex closest to `point`. Vertex (x, y) is the top-left corner of
+    /// cell (x, y); vertices on the outer border are excluded, so every one has four cells around it.
+    func nearestVertex(to point: CGPoint) -> Cell {
+        guard cellSize > 0 else { return Cell(x: 1, y: 1) }
+        let x = Int(((point.x - frame.minX) / cellSize).rounded())
+        let y = Int(((point.y - frame.minY) / cellSize).rounded())
+        return Cell(x: min(max(x, 1), max(columns - 1, 1)), y: min(max(y, 1), max(rows - 1, 1)))
+    }
+
     /// The cell under `point`, or the closest edge cell when the point is outside the grid.
     func nearestCell(to point: CGPoint) -> Cell {
         guard cellSize > 0 else { return Cell(x: 0, y: 0) }
