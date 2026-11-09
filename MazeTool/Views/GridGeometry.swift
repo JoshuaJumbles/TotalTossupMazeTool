@@ -29,6 +29,15 @@ struct GridGeometry {
         )
     }
 
+    func rect(for room: Room) -> CGRect {
+        CGRect(
+            x: frame.minX + CGFloat(room.x) * cellSize,
+            y: frame.minY + CGFloat(room.y) * cellSize,
+            width: CGFloat(room.width) * cellSize,
+            height: CGFloat(room.height) * cellSize
+        )
+    }
+
     /// The cell under `point`, or the closest edge cell when the point is outside the grid.
     func nearestCell(to point: CGPoint) -> Cell {
         guard cellSize > 0 else { return Cell(x: 0, y: 0) }
