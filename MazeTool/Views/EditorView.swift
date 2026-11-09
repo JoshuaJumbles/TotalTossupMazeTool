@@ -18,6 +18,7 @@ private struct EditorScreen: View {
     @State private var model: EditorModel
     @State private var isShowingRace = false
     @State private var isShowingSettings = false
+    @State private var isShowingExport = false
     @State private var isPreviewing = false
 
     init(document: MazeDocument, store: DocumentStore) {
@@ -67,6 +68,12 @@ private struct EditorScreen: View {
                         .foregroundStyle(.secondary)
                         .padding(8)
                         .background(.thinMaterial, in: Circle())
+                    Button("Export", systemImage: "square.and.arrow.up") { isShowingExport = true }
+                        .labelStyle(.iconOnly)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                        .padding(8)
+                        .background(.thinMaterial, in: Circle())
                     Spacer()
                     Button {
                         isShowingRace = true
@@ -93,6 +100,9 @@ private struct EditorScreen: View {
         }
         .sheet(isPresented: $isShowingSettings) {
             SettingsSheet(model: model)
+        }
+        .sheet(isPresented: $isShowingExport) {
+            ExportSheet(document: model.document)
         }
         .navigationTitle(model.document.name)
         .navigationBarTitleDisplayMode(.inline)

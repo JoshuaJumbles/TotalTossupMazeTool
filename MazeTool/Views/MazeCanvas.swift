@@ -9,6 +9,13 @@ struct MazeCanvas: View {
     /// Draws only the walls, in the foreground colour, with nothing behind them. Uncarved cells
     /// are left as blank as open space. Hides all editor overlays.
     var isPreview = false
+    /// Fills behind the maze: shaded uncarved cells, clear floor and the outer border. Off for
+    /// export, where everything but the drawing itself stays transparent.
+    var showsBackdrop = true
+    /// The colour of walls and marker letters. Export pins it to black whatever the appearance.
+    var ink = Color.primary
+    /// Space kept clear around the grid, so walls on its edge aren't cut in half.
+    var inset: CGFloat = 0
     /// Rooms being dragged out, drawn as dashed outlines over the maze.
     var roomPreviews: [Room] = []
     var canPlaceRoomPreview = true
@@ -20,6 +27,9 @@ struct MazeCanvas: View {
 
     var body: some View {
         Canvas { context, size in
+            var context = context
+            context.translateBy(x: inset, y: inset)
+            let size = CGSize(width: size.width - inset * 2, height: size.height - inset * 2)
             let geometry = GridGeometry(columns: maze.width, rows: maze.height, size: size)
             var floor = Path()
             var walls = Path()
@@ -39,15 +49,17 @@ struct MazeCanvas: View {
 
             if isPreview {
                 context.stroke(
-                    walls, with: .color(.primary),
+                    walls, with: .color(ink),
                     style: StrokeStyle(lineWidth: wallThickness, lineCap: .square)
                 )
                 return
             }
-            context.fill(Path(geometry.frame), with: .color(Color(.systemGray5)))
-            context.fill(floor, with: .color(Color(.systemBackground)))
+            if showsBackdrop {
+                context.fill(Path(geometry.frame), with: .color(Color(.systemGray5)))
+                context.fill(floor, with: .color(Color(.systemBackground)))
+            }
             for room in maze.rooms {
-                Self.draw(room, in: geometry.rect(for: room), cellSize: geometry.cellSize, context: context)
+                Self.draw(room, in: geometry.rect(for: room), cellSize: geometry.cellSize, ink: ink, context: context)
             }
             for route in analysis?.routes.values.map({ $0 }) ?? [] {
                 var tinted = Path()
@@ -56,13 +68,20 @@ struct MazeCanvas: View {
                 context.fill(tinted, with: .color(route.team.color.opacity(0.2)))
             }
             if showsGrid {
-                context.stroke(Self.gridLines(geometry), with: .color(.secondary.opacity(0.35)), lineWidth: 0.5)
+                var lines = Self.gridLines(geometry)
+                // With no backdrop there is no border, so the grid closes its own outer edge.
+                if !showsBackdrop {
+                    lines.addRect(geometry.frame)
+                }
+                context.stroke(lines, with: .color(.secondary.opacity(0.35)), lineWidth: 0.5)
             }
             context.stroke(
-                walls, with: .color(.primary),
+                walls, with: .color(ink),
                 style: StrokeStyle(lineWidth: wallThickness, lineCap: .square)
             )
-            context.stroke(Path(geometry.frame), with: .color(.primary), lineWidth: 1)
+            if showsBackdrop {
+                context.stroke(Path(geometry.frame), with: .color(ink), lineWidth: 1)
+            }
 
             if let analysis {
                 for route in analysis.routes.values {
@@ -109,7 +128,7 @@ struct MazeCanvas: View {
     }
 
     /// Tints the room and, for a marked room, labels it S or E.
-    private static func draw(_ room: Room, in rect: CGRect, cellSize: CGFloat, context: GraphicsContext) {
+    private static func draw(_ room: Room, in rect: CGRect, cellSize: CGFloat, ink: Color, context: GraphicsContext) {
         let (tint, label): (Color, String?) = switch room.marker {
         case .blueStart: (.blue, "S")
         case .redStart: (.red, "S")
@@ -120,7 +139,7 @@ struct MazeCanvas: View {
         guard let label else { return }
         let fontSize = min(min(rect.width, rect.height) * 0.7, cellSize * 1.5)
         context.draw(
-            Text(label).font(.system(size: fontSize, weight: .bold)).foregroundStyle(.primary),
+            Text(label).font(.system(size: fontSize, weight: .bold)).foregroundStyle(ink),
             at: CGPoint(x: rect.midX, y: rect.midY)
         )
     }
