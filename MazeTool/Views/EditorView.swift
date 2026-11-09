@@ -26,8 +26,13 @@ private struct EditorScreen: View {
 
         GeometryReader { proxy in
             let geometry = GridGeometry(columns: model.maze.width, rows: model.maze.height, size: proxy.size)
-            MazeCanvas(maze: model.maze, wallThickness: model.document.settings.wallThickness)
-                .contentShape(Rectangle())
+            MazeCanvas(
+                maze: model.maze,
+                wallThickness: model.document.settings.wallThickness,
+                roomPreview: model.roomPreview,
+                canPlaceRoomPreview: model.canPlaceRoomPreview
+            )
+            .contentShape(Rectangle())
                 .gesture(
                     DragGesture(minimumDistance: 0)
                         .onChanged { value in

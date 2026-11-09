@@ -34,6 +34,8 @@ enum Direction: CaseIterable {
 struct Maze: Equatable {
     let width: Int
     let height: Int
+    /// Rooms never overlap each other.
+    private(set) var rooms: [Room] = []
 
     private var carved: [Bool]
     /// Connection from each cell to its right-hand neighbour, row-major. The last column is unused.
@@ -78,9 +80,52 @@ struct Maze: Equatable {
         setOpen(true, edge)
     }
 
-    /// Fills the cell back in and closes its connections.
+    func room(at cell: Cell) -> Room? {
+        rooms.first { $0.contains(cell) }
+    }
+
+    /// A room fits when it lies inside the grid and overlaps no other room.
+    func canAddRoom(_ room: Room) -> Bool {
+        room.x >= 0 && room.y >= 0 && room.x + room.width <= width && room.y + room.height <= height
+            && !rooms.contains { $0.overlaps(room) }
+    }
+
+    /// Carves the room and opens its interior. Paths already under it are absorbed, and
+    /// their connections to cells outside remain as doorways.
+    @discardableResult
+    mutating func addRoom(_ room: Room) -> Bool {
+        guard canAddRoom(room) else { return false }
+        rooms.append(room)
+        for cell in room.cells {
+            for direction in [Direction.right, .down] where room.contains(cell.neighbor(direction)) {
+                connect(cell, cell.neighbor(direction))
+            }
+            carve(cell)
+        }
+        return true
+    }
+
+    /// Removes the room covering `cell`, filling its cells back in and closing its doorways.
+    @discardableResult
+    mutating func removeRoom(at cell: Cell) -> Bool {
+        guard let index = rooms.firstIndex(where: { $0.contains(cell) }) else { return false }
+        let room = rooms.remove(at: index)
+        room.cells.forEach { erase($0) }
+        return true
+    }
+
+    /// Advances the marker of the room covering `cell` to the next one in the cycle.
+    @discardableResult
+    mutating func cycleMarker(at cell: Cell) -> Bool {
+        guard let index = rooms.firstIndex(where: { $0.contains(cell) }) else { return false }
+        rooms[index].marker = Room.Marker.next(after: rooms[index].marker)
+        return true
+    }
+
+    /// Fills the cell back in and closes its connections. Room cells are left alone;
+    /// a room is only removed whole, with `removeRoom(at:)`.
     mutating func erase(_ cell: Cell) {
-        guard contains(cell) else { return }
+        guard contains(cell), room(at: cell) == nil else { return }
         carved[index(cell)] = false
         for direction in Direction.allCases {
             if let edge = edge(cell, cell.neighbor(direction)) {
@@ -149,7 +194,7 @@ struct Maze: Equatable {
 /// Encoded as one string per row ("#" set, "." clear) so saved files stay small and readable.
 extension Maze: Codable {
     private enum CodingKeys: String, CodingKey {
-        case width, height, cells, right, down
+        case width, height, cells, right, down, rooms
     }
 
     init(from decoder: Decoder) throws {
@@ -161,6 +206,8 @@ extension Maze: Codable {
         carved = try flags(in: container, forKey: .cells)
         openRight = try flags(in: container, forKey: .right)
         openDown = try flags(in: container, forKey: .down)
+        // Files saved before rooms existed have no rooms key.
+        rooms = try container.decodeIfPresent([Room].self, forKey: .rooms) ?? []
     }
 
     func encode(to encoder: Encoder) throws {
@@ -170,6 +217,7 @@ extension Maze: Codable {
         try container.encode(rows(carved), forKey: .cells)
         try container.encode(rows(openRight), forKey: .right)
         try container.encode(rows(openDown), forKey: .down)
+        try container.encode(rooms, forKey: .rooms)
     }
 
     private func rows(_ flags: [Bool]) -> [String] {
