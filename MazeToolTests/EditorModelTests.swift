@@ -141,6 +141,18 @@ struct GridGeometryTests {
         #expect(geometry.rect(for: Cell(x: 1, y: 1)) == CGRect(x: 25, y: 50, width: 25, height: 25))
     }
 
+    @Test func blockLinesPairCellsFromBothEdgesAndLeaveOddCellsInTheMiddle() {
+        // Even counts divide cleanly into pairs.
+        #expect(GridGeometry.blockLines(count: 16) == [2, 4, 6, 8, 10, 12, 14])
+        #expect(GridGeometry.blockLines(count: 18) == [2, 4, 6, 8, 10, 12, 14, 16])
+        // 17 = 8 + 1 + 8: a single column down the middle.
+        #expect(GridGeometry.blockLines(count: 17) == [2, 4, 6, 8, 9, 11, 13, 15])
+        // 15 = 6 + 3 + 6: pairs can't reach the middle evenly, so three columns are left.
+        #expect(GridGeometry.blockLines(count: 15) == [2, 4, 6, 9, 11, 13])
+        #expect(GridGeometry.blockLines(count: 5) == [2, 3])
+        #expect(GridGeometry.blockLines(count: 3).isEmpty)
+    }
+
     @Test func pointsOutsideTheGridClampToTheEdge() {
         let geometry = GridGeometry(columns: 4, rows: 2, size: CGSize(width: 100, height: 100))
 

@@ -79,6 +79,8 @@ struct MazeCanvas: View {
                     lines.addRect(geometry.frame)
                 }
                 context.stroke(lines, with: .color(.secondary.opacity(0.35)), lineWidth: 0.5)
+                // Heavier lines mark 2 × 2 blocks, the room a path needs to turn back on itself.
+                context.stroke(Self.blockLines(geometry), with: .color(.secondary.opacity(0.6)), lineWidth: 1.5)
             }
             context.stroke(
                 walls, with: .color(ink),
@@ -187,14 +189,27 @@ struct MazeCanvas: View {
     }
 
     private static func gridLines(_ geometry: GridGeometry) -> Path {
+        lines(atColumns: Array(1..<max(geometry.columns, 1)), rows: Array(1..<max(geometry.rows, 1)), geometry)
+    }
+
+    private static func blockLines(_ geometry: GridGeometry) -> Path {
+        lines(
+            atColumns: GridGeometry.blockLines(count: geometry.columns),
+            rows: GridGeometry.blockLines(count: geometry.rows),
+            geometry
+        )
+    }
+
+    /// Full-length lines along the given column and row boundaries.
+    private static func lines(atColumns columns: [Int], rows: [Int], _ geometry: GridGeometry) -> Path {
         var lines = Path()
         let frame = geometry.frame
-        for column in 1..<max(geometry.columns, 1) {
+        for column in columns {
             let x = frame.minX + CGFloat(column) * geometry.cellSize
             lines.move(to: CGPoint(x: x, y: frame.minY))
             lines.addLine(to: CGPoint(x: x, y: frame.maxY))
         }
-        for row in 1..<max(geometry.rows, 1) {
+        for row in rows {
             let y = frame.minY + CGFloat(row) * geometry.cellSize
             lines.move(to: CGPoint(x: frame.minX, y: y))
             lines.addLine(to: CGPoint(x: frame.maxX, y: y))
