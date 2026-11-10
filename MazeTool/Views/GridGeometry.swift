@@ -6,6 +6,16 @@ struct GridGeometry {
     /// Walls are drawn in proportion, so a maze looks the same at any size.
     static let referenceCellSize: CGFloat = 24
 
+    /// The grid lines that divide `count` cells into blocks two cells wide, counted inwards
+    /// from both edges. Blocks always sit flush against the edges, where a path most needs
+    /// room to turn back; any cells left over (one, or three, for an odd count) end up
+    /// undivided in the middle.
+    static func blockLines(count: Int) -> [Int] {
+        guard count >= 4 else { return [] }
+        let fromNearEdge = Array(stride(from: 2, through: count / 2, by: 2))
+        return Set(fromNearEdge + fromNearEdge.map { count - $0 }).sorted()
+    }
+
     let columns: Int
     let rows: Int
     let cellSize: CGFloat

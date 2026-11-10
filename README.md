@@ -20,6 +20,7 @@ Early development. Working today:
 - Symmetry: mirror left and right, mirror top and bottom, or rotate 180°, applied to every stroke while it is on
 - Preview: a two-tone view of the bare maze with every editor overlay hidden
 - Settings: wall thickness per maze, and a light, dark or system appearance for the app
+- Block guides: heavier grid lines mark 2 × 2 blocks, counted in from every edge
 - Zoom: pinch to zoom up to 5×, drag with two fingers to pan, one finger still draws
 - iPad: runs in any orientation; in landscape the tools move beside the maze
 - Export: transparent PNGs of the bare walls, the walls with editor overlays, or both, through the share sheet
